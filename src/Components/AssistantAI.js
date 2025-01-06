@@ -15,6 +15,7 @@ import {
   CircularProgress,
   Button,
   IconButton,
+  Box,
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import MicNoneIcon from "@mui/icons-material/MicNone";
@@ -52,60 +53,73 @@ const AssistantAI = () => {
     setUserInput(e.target.value);
   };
 
-  const handleSubmit = async () => {
-    if (userInput.trim()) {
-      setUserInput("");
-      setLoading(true);
-      setShowTable(false);
-      setShowCards(false);
+  // ----------------------------- dummy data call -----------------------------------------------
 
-      const dummyData = [
-        {
-          Product: "Product A",
-          Interactions: 120,
-          Customers: 30,
-          Channel: "Email",
-        },
-        {
-          Product: "Product B",
-          Interactions: 150,
-          Customers: 45,
-          Channel: "Phone",
-        },
-        {
-          Product: "Product C",
-          Interactions: 80,
-          Customers: 20,
-          Channel: "Chat",
-        },
-        {
-          Product: "Product D",
-          Interactions: 200,
-          Customers: 60,
-          Channel: "Email",
-        },
-        {
-          Product: "Product E",
-          Interactions: 90,
-          Customers: 25,
-          Channel: "Phone",
-        },
-      ];
-      setData((prev) => [...prev, { question: userInput, answer: "" }]);
+  // const handleSubmit = async () => {
+  //   if (userInput.trim()) {
+  //     setUserInput("");
+  //     setLoading(true);
+  //     setShowTable(false);
+  //     setShowCards(false);
 
-      setTimeout(() => {
-        setTableData(dummyData);
+  //     // const dummyData = [
+  //     //   {
+  //     //     Product: "Product A",
+  //     //     Interactions: 120,
+  //     //     Customers: 30,
+  //     //     Channel: "Email",
+  //     //   },
+  //     //   {
+  //     //     Product: "Product B",
+  //     //     Interactions: 150,
+  //     //     Customers: 45,
+  //     //     Channel: "Phone",
+  //     //   },
+  //     //   {
+  //     //     Product: "Product C",
+  //     //     Interactions: 80,
+  //     //     Customers: 20,
+  //     //     Channel: "Chat",
+  //     //   },
+  //     //   {
+  //     //     Product: "Product D",
+  //     //     Interactions: 200,
+  //     //     Customers: 60,
+  //     //     Channel: "Email",
+  //     //   },
+  //     //   {
+  //     //     Product: "Product E",
+  //     //     Interactions: 90,
+  //     //     Customers: 25,
+  //     //     Channel: "Phone",
+  //     //   },
+  //     // ];
 
-        setShowTable(true);
-        setData((prev) => {
-          const updatedData = [...prev];
-          updatedData[updatedData.length - 1].answer = dummyData; // Update the last entry's answer
-          return updatedData;
-        });
-        setLoading(false);
-      }, 1500);
-    }
-  };
+  //     const dummyData = {
+  //       agentResponse:
+  //         "Can you please specify from which fact table you want this information? Our database has multiple fact tables like cust_experience_fact, interaction_fact, workforce_performance_fact.",
+  //       sqlquery:
+  //         "SELECT COUNT(interaction_id) AS num_interactions FROM workforce_performance_fact WHERE agent_final_tone = 'low' UNION ALL SELECT COUNT(interaction_id) AS num_interactions FROM cust_experience_fact WHERE customer_final_tone = 'low'",
+  //       result: [[134], [122]],
+  //     };
+
+  //     setData((prev) => [...prev, { query: userInput, answer: "" }]);
+
+  //     setTimeout(() => {
+  //       setTableData(dummyData);
+
+  //       setShowTable(true);
+  //       setData((prev) => {
+  //         const updatedData = [...prev];
+  //         updatedData[updatedData.length - 1].answer = dummyData; // Update the last entry's answer
+  //         return updatedData;
+  //       });
+  //       setLoading(false);
+  //     }, 1500);
+  //   }
+  // };
+
+  // --------------------------------- API CALL ---------------------------------------
 
   // const handleSubmit = async () => {
   //   if (!userInput.trim()) return;
@@ -139,6 +153,91 @@ const AssistantAI = () => {
   //   }
   // };
 
+  // ==================================== API CALL NEWWWWWWW =========================
+  const handleSubmit = async () => {
+    if (!userInput.trim()) return; // If user input is empty, exit early
+
+    setUserInput("");
+    setLoading(true);
+    setShowTable(false);
+    setShowCards(false);
+
+    try {
+      setData((prev) => [...prev, { question: userInput, answer: "" }]);
+
+      const response = await API.post("/get_bot_response", {
+        question: userInput,
+      });
+
+      if (response?.data) {
+        setTableData(response.data);
+        setData((prev) => {
+          const updatedData = [...prev];
+          updatedData[updatedData.length - 1].answer = {
+            agentResponse: response.data.agent_response,
+            sqlquery: response.data.query,
+            result: response.data.result,
+          };
+          return updatedData;
+        });
+
+        setShowTable(true);
+      } else {
+        console.log("No data received from the API.");
+      }
+    } catch (error) {
+      console.log("Error fetching data from the API:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ============================= Practice submit DUMMY =============================
+
+  // const handleSubmit = async () => {
+  //   if (userInput.trim()) {
+  //     setUserInput("");
+  //     setLoading(true);
+  //     setShowTable(false);
+  //     setShowCards(false);
+
+  //     const dummyData = {
+  //       agentResponse:
+  //         "Can you please specify from which fact table you want this information? Our database has multiple fact tables like cust_experience_fact, interaction_fact, workforce_performance_fact.",
+  //       sqlquery:
+  //         "SELECT COUNT(interaction_id) AS num_interactions FROM workforce_performance_fact WHERE agent_final_tone = 'low' UNION ALL SELECT COUNT(interaction_id) AS num_interactions FROM cust_experience_fact WHERE customer_final_tone = 'low'",
+  //       // result: [
+  //       //   { Table: "workforce_performance_fact", Num_Interactions: 134 },
+  //       //   { Table: "cust_experience_fact", Num_Interactions: 122 },
+  //       // ],
+  //       result: [[123]],
+  //     };
+
+  //     console.log("User Input:", userInput); // Debug user input
+  //     setData((prev) => [...prev, { query: userInput, answer: "" }]);
+
+  //     setTimeout(() => {
+  //       console.log("Setting table data:", dummyData);
+  //       setTableData(dummyData);
+
+  //       setShowTable(true);
+  //       setData((prev) => {
+  //         const updatedData = [...prev];
+  //         console.log("Previous data:", updatedData);
+  //         updatedData[updatedData.length - 1].answer = {
+  //           agentResponse: dummyData.agentResponse,
+  //           sqlquery: dummyData.sqlquery,
+  //           result: dummyData.result,
+  //         };
+  //         console.log("Updated data:", updatedData);
+  //         return updatedData;
+  //       });
+
+  //       setLoading(false);
+  //     }, 1500);
+  //   }
+  // };
+
   const handleKeyPress = (event) => {
     if (event.key === "Enter") {
       handleSubmit();
@@ -165,7 +264,7 @@ const AssistantAI = () => {
           return (
             <div key={index}>
               {/* Question on the right */}
-              <div
+              {/* <div
                 style={{
                   display: "flex",
                   justifyContent: "flex-end",
@@ -176,100 +275,24 @@ const AssistantAI = () => {
                 <QuestionBackground>
                   <Typography variant="body1">{item.question}</Typography>
                 </QuestionBackground>
-              </div>
-
-              {/* Answer on the left */}
-              {/* {loading ? (
-                <CircularProgress size={40} />
-              ) : (
-                <div style={{ paddingLeft: "50px", display: "flex" }}>
-                  {item?.answer && (
-                    <span
-                      style={{
-                        marginTop: "20px",
-                        fontSize: "20px",
-                        paddingRight: "10px",
-                      }}
-                    >
-                      &#9679;{" "}
-                    </span>
-                  )}
-                  {Array.isArray(item?.answer) ? ( // for string text we need to add false condition
-                    <>
-                      <TableContainer
-                        component={Paper}
-                        style={{
-                          marginTop: "20px",
-                          width: "90%",
-                          maxWidth: "800px",
-                          border: "0.5px solid #ccc",
-                          marginBottom: "20px",
-                          boxShadow: "none",
-                        }}
-                      >
-                        <Table
-                          size="small"
-                          style={{ borderCollapse: "collapse", width: "100%" }}
-                        >
-                          <TableHead>
-                            <TableRow
-                              style={{
-                                backgroundColor: "#f0f0f0", // Gray color for the header
-                              }}
-                            >
-                              {Object.keys(item.answer[0]).map((key) => (
-                                <TableCell
-                                  key={key}
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    fontWeight: "bold",
-                                    textAlign: "center",
-                                  }}
-                                >
-                                  {key}
-                                </TableCell>
-                              ))}
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {item.answer.map((row, index) => (
-                              <TableRow key={index}>
-                                {Object.values(row).map((value, idx) => (
-                                  <TableCell
-                                    key={idx}
-                                    style={{
-                                      border: "1px solid #ddd",
-                                      textAlign: "center",
-                                    }}
-                                  >
-                                    {value}
-                                  </TableCell>
-                                ))}
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
-                      <IconButton
-                        color="primary"
-                        style={{
-                          marginLeft: "8px",
-                          marginTop: "16px",
-                          backgroundColor: "transparent",
-                          boxShadow: "none",
-                        }}
-                        onClick={() => handleDownload(item.answer)}
-                      >
-                        <FileDownloadOutlinedIcon />
-                      </IconButton>
-                    </>
-                  ) : (
-                    <Typography pt={3} textAlign="left" variant="body1">
-                      {item.answer}
-                    </Typography>
-                  )}
-                </div>
-              )} */}
+              </div> */}
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  marginBottom: "10px",
+                  paddingRight: {
+                    xs: "5px", // 20px padding on extra small screens (phones)
+                    sm: "20px", // 30px padding on small screens (small tablets)
+                    md: "30px", // 40px padding on medium screens (large tablets)
+                    lg: "40px", // 50px padding on large screens (laptops)
+                  },
+                }}
+              >
+                <QuestionBackground>
+                  <Typography variant="body1">{item.question}</Typography>
+                </QuestionBackground>
+              </Box>
 
               <div style={{ paddingLeft: "50px", display: "flex" }}>
                 {item?.answer && (
@@ -283,82 +306,226 @@ const AssistantAI = () => {
                     &#9679;{" "}
                   </span>
                 )}
-                {item?.answer ? (
-                  Array.isArray(item.answer) ? (
-                    <>
-                      <TableContainer
-                        component={Paper}
-                        style={{
-                          marginTop: "20px",
-                          width: "90%",
-                          maxWidth: "800px",
-                          border: "0.5px solid #ccc",
-                          marginBottom: "20px",
-                          boxShadow: "none",
-                        }}
+                {item?.answer && (
+                  <div
+                    style={{
+                      paddingLeft: "50px",
+                      border: "1px solid #ccc", // Add a border around the container
+                      padding: "10px", // Padding inside the container
+                      marginBottom: "20px", // Margin at the bottom
+                      maxWidth: "800px", // Maximum width for the container
+                      width: "auto", // Adjust width based on content
+                      height: "auto", // Adjust height based on content
+                      borderRadius: "8px", // Rounded corners for a cleaner look
+                    }}
+                  >
+                    {item.answer.agentResponse && (
+                      <Typography
+                        variant="body1"
+                        style={{ marginBottom: "10px" }}
                       >
-                        <Table
-                          size="small"
-                          style={{ borderCollapse: "collapse", width: "100%" }}
+                        {/* <strong>Agent Response:</strong>{" "} */}
+                        {item.answer.agentResponse}
+                      </Typography>
+                    )}
+
+                    {item.answer.sqlquery && (
+                      <Typography
+                        sx={{ color: "#0096FF", fontWeight: "700" }}
+                        variant="body1"
+                      >
+                        <strong style={{ color: "black" }}>SQL Query : </strong>
+                        {item.answer.sqlquery}
+                      </Typography>
+                    )}
+
+                    {/* {item.answer ? (
+                    Array.isArray(item.answer.result) ? ( // Check if `item.answer.result` is an array
+                      <>
+                        <div
+                          style={{
+                            display: "flex", // This ensures the table and download icon are in a row
+                            flexDirection: "row", // Align in a row
+                            alignItems: "center", // Align vertically centered
+                            marginTop: "20px",
+                          }}
                         >
-                          <TableHead>
-                            <TableRow
+                          <TableContainer
+                            component={Paper}
+                            style={{
+                              flex: 1, // Table takes up remaining space
+                              maxWidth: "800px",
+                              border: "0.5px solid #ccc",
+                              marginBottom: "20px",
+                              boxShadow: "none",
+                            }}
+                          >
+                            <Table
+                              size="small"
                               style={{
-                                backgroundColor: "#f0f0f0", // Gray color for the header
+                                borderCollapse: "collapse",
+                                width: "100%",
                               }}
                             >
-                              {Object.keys(item.answer[0]).map((key) => (
-                                <TableCell
-                                  key={key}
+                              <TableHead>
+                                <TableRow
                                   style={{
-                                    border: "1px solid #ddd",
-                                    fontWeight: "bold",
-                                    textAlign: "center",
+                                    backgroundColor: "#f0f0f0", // Gray color for the header
                                   }}
                                 >
-                                  {key}
-                                </TableCell>
-                              ))}
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {item.answer.map((row, index) => (
-                              <TableRow key={index}>
-                                {Object.values(row).map((value, idx) => (
-                                  <TableCell
-                                    key={idx}
+                                  {Object.keys(item.answer.result[0]).map(
+                                    (key) => (
+                                      <TableCell
+                                        key={key}
+                                        style={{
+                                          border: "1px solid #ddd",
+                                          fontWeight: "bold",
+                                          textAlign: "center",
+                                        }}
+                                      >
+                                        {key}
+                                      </TableCell>
+                                    )
+                                  )}
+                                </TableRow>
+                              </TableHead>
+                              <TableBody>
+                                {item.answer.result.map((row, index) => (
+                                  <TableRow key={index}>
+                                    {Object.values(row).map((value, idx) => (
+                                      <TableCell
+                                        key={idx}
+                                        style={{
+                                          border: "1px solid #ddd",
+                                          textAlign: "center",
+                                        }}
+                                      >
+                                        {value}
+                                      </TableCell>
+                                    ))}
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </TableContainer>
+
+                          <IconButton
+                            color="primary"
+                            style={{
+                              marginLeft: "16px", // Space between table and icon
+                              marginTop: "16px",
+                              backgroundColor: "transparent",
+                              boxShadow: "none",
+                            }}
+                            onClick={() => handleDownload(item.answer.result)} // Pass `item.answer.result` for download
+                          >
+                            <FileDownloadOutlinedIcon />
+                          </IconButton>
+                        </div>
+                      </>
+                    ) : (
+                      <Typography pt={3} textAlign="left" variant="body1">
+                        {item.answer.result}{" "}
+                      </Typography>
+                    )
+                  ) : null} */}
+                    {item.answer ? (
+                      // Check if item.answer.result is an array and has data
+                      Array.isArray(item.answer.result) &&
+                      item.answer.result.length > 0 ? (
+                        <>
+                          <div
+                            style={{
+                              display: "flex", // This ensures the table and download icon are in a row
+                              flexDirection: "row", // Align in a row
+                              // alignItems: "center", // Align vertically centered
+                              marginTop: "20px",
+                            }}
+                          >
+                            <TableContainer
+                              component={Paper}
+                              style={{
+                                flex: 1, // Table takes up remaining space
+                                maxWidth: "800px",
+                                border: "0.5px solid #ccc",
+                                marginBottom: "20px",
+                                boxShadow: "none",
+                              }}
+                            >
+                              <Table
+                                size="small"
+                                style={{
+                                  borderCollapse: "collapse",
+                                  width: "100%",
+                                }}
+                              >
+                                <TableHead>
+                                  <TableRow
                                     style={{
-                                      border: "1px solid #ddd",
-                                      textAlign: "center",
+                                      backgroundColor: "#f0f0f0", // Gray color for the header
                                     }}
                                   >
-                                    {value}
-                                  </TableCell>
-                                ))}
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
-                      <IconButton
-                        color="primary"
-                        style={{
-                          marginLeft: "8px",
-                          marginTop: "16px",
-                          backgroundColor: "transparent",
-                          boxShadow: "none",
-                        }}
-                        onClick={() => handleDownload(item.answer)}
-                      >
-                        <FileDownloadOutlinedIcon />
-                      </IconButton>
-                    </>
-                  ) : (
-                    <Typography pt={3} textAlign="left" variant="body1">
-                      {item.answer}
-                    </Typography>
-                  )
-                ) : null}
+                                    {Object.keys(item.answer.result[0]).map(
+                                      (key) => (
+                                        <TableCell
+                                          key={key}
+                                          style={{
+                                            border: "1px solid #ddd",
+                                            fontWeight: "bold",
+                                            textAlign: "center",
+                                          }}
+                                        >
+                                          {key}
+                                        </TableCell>
+                                      )
+                                    )}
+                                  </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                  {item.answer.result.map((row, index) => (
+                                    <TableRow key={index}>
+                                      {Object.values(row).map((value, idx) => (
+                                        <TableCell
+                                          key={idx}
+                                          style={{
+                                            border: "1px solid #ddd",
+                                            textAlign: "center",
+                                          }}
+                                        >
+                                          {value}
+                                        </TableCell>
+                                      ))}
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </TableContainer>
+
+                            {/* Download Icon next to the table */}
+                            <IconButton
+                              color="primary"
+                              style={{
+                                // marginLeft: "16px", // Space between table and icon
+                                marginTop: "16px",
+                                backgroundColor: "transparent",
+                                boxShadow: "none",
+                              }}
+                              onClick={() => handleDownload(item.answer.result)} // Pass `item.answer.result` for download
+                            >
+                              <FileDownloadOutlinedIcon />
+                            </IconButton>
+                          </div>
+                        </>
+                      ) : (
+                        // If item.answer.result is not an array or is empty, show the text
+                        <Typography pt={3} textAlign="left" variant="body1">
+                          {item.answer.result}{" "}
+                          {/* This will display the agent response or query when `result` is not an array */}
+                        </Typography>
+                      )
+                    ) : null}
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -369,6 +536,99 @@ const AssistantAI = () => {
           </div>
         )}
       </div>
+
+      // <div
+      //   style={{
+      //     width: "100%",
+      //     height: "100vh",
+      //     overflow: "auto",
+      //   }}
+      //   ref={chatContainerRef}
+      // >
+      //   {data.map((item, index) => (
+      //     <div key={index} style={{ marginBottom: "20px" }}>
+      //       {/* User's Query */}
+      //       <div
+      //         style={{
+      //           display: "flex",
+      //           justifyContent: "flex-end",
+      //           marginBottom: "10px",
+      //           paddingRight: "50px",
+      //         }}
+      //       >
+      //         <Typography
+      //           variant="body1"
+      //           style={{
+      //             backgroundColor: "#e0e0e0",
+      //             padding: "10px",
+      //             borderRadius: "5px",
+      //           }}
+      //         >
+      //           {item.query}
+      //         </Typography>
+      //       </div>
+
+      //       {/* Response */}
+      //       {item.answer && (
+      //         <div style={{ paddingLeft: "50px" }}>
+      //           <Typography variant="body1" style={{ marginBottom: "10px" }}>
+      //             <strong>Agent Response:</strong> {item.answer.agentResponse}
+      //           </Typography>
+      //           <Typography variant="body1" style={{ marginBottom: "10px" }}>
+      //             <strong>SQL Query:</strong> {item.answer.sqlquery}
+      //           </Typography>
+
+      //           {/* Result Table */}
+      //           <TableContainer
+      //             component={Paper}
+      //             style={{
+      //               marginTop: "20px",
+      //               width: "90%",
+      //               maxWidth: "800px",
+      //               border: "1px solid #ccc",
+      //               marginBottom: "20px",
+      //               boxShadow: "none",
+      //             }}
+      //           >
+      //             <Table>
+      //               <TableHead>
+      //                 <TableRow>
+      //                   {Object.keys(item.answer.result[0]).map((key) => (
+      //                     <TableCell key={key} style={{ fontWeight: "bold" }}>
+      //                       {key}
+      //                     </TableCell>
+      //                   ))}
+      //                 </TableRow>
+      //               </TableHead>
+      //               <TableBody>
+      //                 {item.answer.result.map((row, idx) => (
+      //                   <TableRow key={idx}>
+      //                     {Object.values(row).map((value, idy) => (
+      //                       <TableCell key={idy}>{value}</TableCell>
+      //                     ))}
+      //                   </TableRow>
+      //                 ))}
+      //               </TableBody>
+      //             </Table>
+      //           </TableContainer>
+
+      //           <IconButton
+      //             color="primary"
+      //             onClick={() => handleDownload(item.answer.result)}
+      //           >
+      //             <FileDownloadOutlinedIcon />
+      //           </IconButton>
+      //         </div>
+      //       )}
+      //     </div>
+      //   ))}
+
+      //   {loading && (
+      //     <div style={{ paddingLeft: "50px", display: "flex" }}>
+      //       <CircularProgress size={20} />
+      //     </div>
+      //   )}
+      // </div>
     );
   };
 
